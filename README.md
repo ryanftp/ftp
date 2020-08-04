@@ -5,5 +5,6 @@ No. You are not avaliable to see it unless granted.
 ```
 ### What will a secured RYANFTP URL look like?
 ```Markdown
-🔒https://ryanftp.github.io/ftp/*/*.*
+🔒Encrypted | https://ryanftp.github.io/ftp/*/*.*?decryptid=*&sha256=*
+❌Decrypted | https://ryanftp.github.io/ftp/*/*.*?sha256=*
 ```
