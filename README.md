@@ -1,5 +1,9 @@
-### Home         [Downloads](https://eduproj.github.io/home/downloads.html)    [Downloads for EDU](https://eduproj.github.io/home/edulogin.html)    [Help and Support](https://eduproj.github.io/home/eduhelp.html)
-#### Is all of Shuzhou LLC EduDepartment's software Free?
+## Ryan's Private FTP
+### Can I see this if I wish to?
 ```Markdown
-They are all free, but some are only provided for schools. You must have a ".edu" email.
+No. You are not avaliable to see it unless granted.
+```
+### What will a secured RYANFTP URL look like?
+```Markdown
+🔒https://ryanftp.github.io/ftp/*/*.*
 ```
