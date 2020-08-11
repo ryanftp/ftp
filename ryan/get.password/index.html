@@ -15,16 +15,12 @@
       function showid(){
         var id = "493 3929 2482";
         alert ("The meeting ID will show in 3 seconds.");
-        timeout (
-                alert ("Meeting ID: "+id),
-                3000);
+        alert ("Meeting ID: "+id);
       }
       function showpw(){
         var id = "H2Nd29jf";
-        alert ("The meeting password will show in 3 seconds.");
-        timeout (
-                alert ("Meeting Password: "+id),
-                3000);
+        alert ("The meeting password will show in 2 seconds.");
+        alert ("Meeting Password: "+id);
       }
     </script>
     <style>
@@ -48,6 +44,6 @@
         +1 669 900 6833 US (San Jose)<br>
         Meeting ID: <a href="#" onclick = "showid()"><button class = "shuzhou">Show Meeting ID</button></a><br>
         Passcode: <a href="#" onclick = "showpw()"><button class = "shuzhou">Show Password</button></a><br>
-        Find your local number: <input type = "submit" value = "Not Avaliable" disabled = "disabled"/><br>
+        Find your local number: <input type = "submit" value = "Not Avaliable" disabled = "disabled" class = "shuzhou"/><br>
   </body>
 </html>
