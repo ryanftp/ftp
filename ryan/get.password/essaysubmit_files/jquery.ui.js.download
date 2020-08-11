@@ -1,0 +1,1001 @@
+(function($) {
+$.u = {
+	createClass: function(methods) {
+		var constructor = methods.initialize;
+		delete methods.initialize;
+		$.extend(constructor.prototype, methods);
+		return constructor;
+	},
+	
+	exist: function($e, type) {
+		switch(type || 'jQuery') {
+			case 'string':
+				return Boolean(typeof $e == 'string' && $e.length > 0); break;
+			case 'number':
+				return Boolean(typeof $e == 'number' && $e.length > 0); break;
+			case 'object':
+				return Boolean(typeof $e == 'object' && $e.length > 0); break;
+			case 'jQuery':
+			default:
+				return Boolean($e instanceof jQuery && $e.length > 0);
+		}
+	},
+	
+	event: {
+		stop: function(e) {
+			e.stopPropagation();
+			e.preventDefault();
+		},
+		
+		isMouseOut: function(e, className) {
+			
+		}
+	},
+	
+	browser: {
+		ie: navigator.userAgent.indexOf('MSIE') == -1 ? false : true,
+		ie6: navigator.userAgent.indexOf('MSIE 6.0') == -1 ? false : true,
+		ie7: navigator.userAgent.indexOf('MSIE 7.0') == -1 ? false : true,
+		ie8: navigator.userAgent.indexOf('MSIE 8.0') == -1 ? false : true,
+		ie9: navigator.userAgent.indexOf('MSIE 9.0') == -1 ? false : true,
+		ie10: navigator.userAgent.indexOf('MSIE 10.0') == -1 ? false : true
+	}
+};
+
+$.u.fx = $.u.createClass({
+	initialize: function($element) {
+		this.element = $element;
+		this.style = {};
+		this.foldStyle = null;
+		this.fxIn = {};
+		this.fxOut = {};
+		this.startShow = false;
+		this.completeHide = false;
+		this.duration = 300;
+	},
+	
+	set: function(propertyName, from, to) {
+		if(typeof propertyName == 'object') {
+			for(var p in propertyName) {
+				this.style[p] = propertyName[p][0];
+				this.fxIn[p] = propertyName[p][1];
+				this.fxOut[p] = propertyName[p][0];
+			}
+		}else {
+			this.style[propertyName] = from;
+			this.fxIn[propertyName] = to;
+			this.fxOut[propertyName] = from;
+		}
+	},
+
+	setFade: function() {
+		this.set('opacity', 0, 1);
+	},
+	
+	setFold: function(side, length, isDynamic) {
+		var $e = this.element;
+		
+		if(!length) length = $e[side]();
+		this.foldStyle = {};
+		this.foldStyle[side] = Math.floor(length);
+		
+		if(isDynamic) {
+			var isHeight = side == 'height' ? true : false,
+				marginSide = isHeight ? 'marginTop' : 'marginLeft',
+				marginProperty = isHeight ? 'margin-top' : 'margin-left',
+				paddingSide = isHeight ? 'paddingTop' : 'paddingLeft',
+				paddingProperty = isHeight ? 'padding-top' : 'padding-left';
+				
+			if($e[0].tagName == 'UL') {
+				$e.fxLis = [];
+				$e.children('li').each(function(index, element) {
+					var $li = $(element),
+						marginVal = Math.floor(parseInt($li.css(marginProperty))),
+						paddingVal = Math.floor(parseInt($li.css(paddingProperty)));
+					$li.createFx({marginSide: [0, marginVal], paddingSide: [0, paddingVal]});
+					$e.fxLis.push($li);
+				});
+			}else {
+				this.set(marginSide, 0, $e.css(marginProperty));
+				this.set(paddingSide, 0, $e.css(paddingProperty));
+			}
+		}
+		
+		this.set(side, 0, this.foldStyle[side]);
+	},
+	
+	playIn: function(duration, complete) {
+		var fx = this,
+			$e = this.element,
+			s = this.style,
+			d = duration || this.duration;
+			
+		if(this.startShow) $e.show();
+		if(!$.isEmptyObject(this.fxIn)) {
+			if(this.foldStyle && $e.fxLis) $($e.fxLis).each(function(index, $li) {
+				$li.fx.playIn(d, function($e) {
+					$e.fx.removeFoldDynamicStyle();
+				});
+			});
+			$e.css(s).animate(this.fxIn, d, function() {
+				fx.completeDefaultIn();
+				if(complete) complete($e);
+			});
+		}
+	},
+	
+	playOut: function(duration, complete) {
+		var fx = this,
+			$e = this.element,
+			d = duration || this.duration;
+			
+		if(!$.isEmptyObject(fx.fxOut)) {
+			if(this.foldStyle && $e.fxLis) $($e.fxLis).each(function(index, $li) {
+				$li.fx.playOut(d, function($e) {
+					$e.fx.removeFoldDynamicStyle();
+				});
+			});
+			$e.animate(fx.fxOut, d, function() {
+				fx.completeDefaultOut();
+				if(complete) complete($e);
+			});
+		}
+	},
+	
+	isSetIn: function() {
+		return !$.isEmptyObject(this.fxIn);
+	},
+	
+	isSetOut: function() {
+		return !$.isEmptyObject(this.fxOut);
+	},
+	
+
+	completeDefaultIn: function() {
+		var $e = this.element;
+		
+		if(this.foldStyle) this.removeFoldStyle();
+	},
+	
+	completeDefaultOut: function() {
+		var $e = this.element;
+		
+		if(this.completeHide) $e.hide();
+		if(this.foldStyle) this.removeFoldStyle();
+	},
+	
+	removeStyleDeclaration: function(styleProperties) {
+		var $e = this.element,
+			inlineStyle = $e.attr('style'),
+			pattern = new RegExp('(' + styleProperties.join('|') + ')\\:\\s*\\w+\\;', 'g');
+		
+		if(inlineStyle) $e.attr('style', inlineStyle.replace(pattern, ''));
+	},
+	
+	removeFoldStyle: function() {
+		this.removeStyleDeclaration(['width', 'height']);
+	},
+	
+	removeFoldDynamicStyle: function() {
+		this.removeStyleDeclaration(['margin-top', 'margin-left', 'padding-top', 'padding-left']);
+	}
+});
+
+$.fn.createFx = function() {
+	this.fx = new $.u.fx(this);
+	if(arguments.length > 0) this.fx.set.apply(this.fx, arguments);
+	return this.fx;
+},
+
+$.fn.move = function(options) {
+	if(typeof options != 'object') return this.css({left: arguments[0], top: arguments[1]});
+	
+	var o = $.extend({}, $.fn.move.defaults, options),
+		isWindow = $.isWindow(o.view[0]) ? true : false,
+		$e = this,
+		$doc = $(document),
+		w = $e.outerWidth(true),
+		h = $e.outerHeight(true),
+		x = o.x + o.offsetX,
+		y = o.y + o.offsetY,
+		docw = isWindow ? document.documentElement.scrollWidth : o.view[0].scrollWidth,
+		doch = isWindow ? document.documentElement.scrollHeight : o.view[0].scrollHeight;
+		
+	if(!isWindow) {
+		x += o.view.scrollLeft();
+		y += o.view.scrollTop();
+	}
+	
+	$e.css({
+		left: o.bleeding ? x : Math.min(Math.max(x, 0), docw - w),
+		top: o.bleeding ? y : Math.min(Math.max(y, 0), doch - h)
+	});
+	
+	if(o.scroll && $e.css('position') != 'fixed') {
+		var vw = isWindow ? o.view.width() : o.view[0].clientWidth,
+			vh = isWindow ? o.view.height() : o.view[0].clientHeight,
+			sl = isWindow ? $doc.scrollLeft() : o.view.scrollLeft(),
+			st = isWindow ? $doc.scrollTop() : o.view.scrollTop();
+			
+		if(x < sl) o.view.scrollLeft(x);
+		if((x + w) > (vw + sl)) o.view.scrollLeft(x + w - vw);
+		if(y < st) o.view.scrollTop(y);
+		if((y + h) > (vh + st)) o.view.scrollTop(y + h - vh);
+	}
+	
+	return $e;
+};
+
+$.fn.move.defaults = {
+	bleeding: true,
+	scroll: false,
+	view: $(window),
+	X: 0,
+	Y: 0,
+	offsetX: 0,
+	offsetY: 0
+};
+
+$.fn.pos = function(options) {
+	if(typeof arguments[0] == 'string') return ie6Fixed(this.css('position', arguments[0]));
+
+	var o = $.extend({}, $.fn.pos.defaults, options),
+		$e = this;
+	
+	if(!o.offset) o.offset = $(document.body);
+	else if(!/absolute|fixed|relative/.test(o.offset.css('position'))) o.offset.css('position', 'relative');
+	$e.css('position', o.type).appendTo(o.offset);
+	
+	if(o.at) {
+		var hw = $e.outerWidth() / 2,
+			hh = $e.outerHeight() / 2;
+		$e.css({margin: 0, left: 'auto', top: 'auto', right: 'auto', bottom: 'auto'});
+		switch(o.at) {
+			case 7:
+				$e.css({left: 0, top: 0}); break;
+			case 8:
+				$e.css({left: '50%', top: 0, marginLeft: -hw}); break;
+			case 9:
+				$e.css({right: 0, top: 0}); break;
+			case 4:
+				$e.css({left: 0, top: '50%', marginTop: -hh}); break;
+			case 5:
+			case 'center':
+			default:
+				$e.css({left: '50%', top: '50%', marginLeft: -hw, marginTop: -hh}); break;
+			case 6:
+				$e.css({right: 0, top: '50%', marginTop: -hh}); break;
+			case 1:
+				$e.css({left: 0, bottom: 0}); break;
+			case 2:
+				$e.css({left: '50%', bottom: 0, marginLeft: -hw}); break;
+			case 3:
+				$e.css({right: 0, bottom: 0}); break;
+		}
+	}
+	return ie6Fixed($e);
+	
+	function ie6Fixed($e) {
+		var s = $e[0].style;
+		
+		if($.u.browser.ie6 && s.position == 'fixed') {
+			s.position = 'absolute';
+			if(s.left == '50%') s.setExpression('left', '(fakeVar = document.documentElement.clientWidth / 2 + document.documentElement.scrollLeft) + "px"');
+			else s.setExpression('left', '(fakeVar = document.documentElement.scrollLeft) + "px"');
+			if(s.top == '50%') s.setExpression('top', '(fakeVar = document.documentElement.clientHeight / 2 + document.documentElement.scrollTop) + "px"');
+			else s.setExpression('top', '(fakeVar = document.documentElement.scrollTop) + "px"');
+		}
+		return $e;
+	}
+};
+
+$.fn.pos.defaults = {
+	offset: null,
+	type: 'absolute'
+};
+
+$.fn.draggable = function(options) {
+	var o = $.extend({}, $.fn.draggable.defaults, options);
+	var	$e = this;
+
+	if(!/absolute|fixed/.test($e.css('position'))) $e.css({position: 'absolute'});
+	if(!o.view) {
+		for(var $p = $e.parent(); $p.size() > 0; $p = $p.parent()) {
+			if(/absolute|fixed|relative/.test($p.css('position'))) {
+				o.view = $p;
+				break;
+			}
+		}
+	}
+	if(!o.view) o.view = $(window);
+	var	isWindow = o.view.length && $.isWindow(o.view[0]) ? true : false;
+	var	$doc = isWindow ? $(document) : o.view;
+		
+	if(isWindow) $(document.body).append($e);
+	(o.trigger ? $e.find(o.trigger) : $e).css('cursor', 'move');
+	
+	if(o.dispatch) drag(o.dispatch);
+	else $e.on('mousedown', o.trigger, drag);
+	
+	function drag(event) {
+		o.offsetX = -(event.pageX - $e.offset().left);
+		o.offsetY = -(event.pageY - $e.offset().top);
+		
+		$doc.off('mousemove.draggable').on('mousemove.draggable', function(event) {
+			if($e.css('position') == 'fixed') {
+				o.x = event.originalEvent.clientX;
+				o.y = event.originalEvent.clientY;
+			}else {
+				o.x = isWindow ? event.pageX : event.pageX - o.view.offset().left;
+				o.y = isWindow ? event.pageY : event.pageY - o.view.offset().top;
+			}
+			$e.move(o);
+			if(o.mousemove && $.isFunction(o.mousemove)) o.mousemove.call($e, event);
+			
+			return false;
+		});
+		
+		$(document).off('mouseup.draggable').on('mouseup.draggable', function(event) {
+			$doc.off('.draggable');
+			if(o.mouseup && $.isFunction(o.mouseup)) o.mouseup.call($e, event);
+			
+			return false;
+		});
+		
+		return false;
+	}
+
+	return $e;
+};
+
+$.fn.draggable.defaults = {
+	dispatch: null,
+	mousemove: null,
+	trigger: null,
+	view: null
+}
+
+$.fn.dialog_lj = function(options) {
+	var o = $.extend({}, $.fn.dialog_lj.defaults, options),
+		$body = $(document.body),
+		$dialog = this.clone(true).addClass(o.classAvtive),
+		$btnClose = $dialog.find('.' + o.classBtnClose),
+		root = document.documentElement,
+		x = Math.round((root.clientWidth - $dialog.outerWidth(true)) / 2),
+		y = Math.round((root.clientHeight - $dialog.outerHeight(true)) / 2);
+		
+	if(o.draggable) o.fixed = false;
+	if($.u.exist($btnClose)) $btnClose.on('click.dialog', destroy);
+	if(o.width) $dialog.css({width: o.width});
+	if(o.height) $dialog.css({height: o.height});
+	if(o.title) $dialog.find('.'+o.classTitle + ' span').text(o.title);
+	if(o.content) $dialog.find('.'+o.classContent).html(o.content);
+	$dialog.createFx();
+	$dialog.fx.startShow = $dialog.fx.completeHide = true;
+	build();
+	
+	return $dialog;
+	
+	var $bg, $offset;
+	function build() {
+		$bg = $('<div></div>').addClass(o.classBg).css({opacity: o.bgOpacity}),
+		$offset = $('<div></div>').addClass(o.classBg).css({background: 'transparent', opacity: 1});
+			
+		$body.append($bg).append($offset.append($dialog));
+		//ie6Fix($bg);
+		//ie6Fix($offset);
+		if(!o.modal) $offset.on('click.dialog', destroy);
+		$bg.hide().fadeIn();
+		$dialog.hide().fadeIn(200);
+		
+		if(o.css) $dialog.css(o.css);
+		else if(o.fixed) $dialog.pos({type: 'fixed', at: 'center'});
+		else $dialog.move(x, y);
+		if(o.fxFade) $dialog.fx.setFade();
+		if(o.fxSlide) $dialog.fx.set('top', o.fixed ? '0%' : 0, o.fixed ? '50%' : y);
+		$dialog.fx.playIn(o.fxDuration);
+		
+		if(o.draggable) {
+			$dialog.draggable({
+				bleeding: true,
+				scroll: false,
+				view: $offset
+			});
+		}
+	}
+
+	function destroy(event) {
+		if(event.target == this) {
+			if($dialog.fx.isSetOut()) $dialog.fx.playOut(o.fxDuration, hide);
+			else hide();
+			$bg.fadeOut(function() {$bg.remove();});
+			if($.isFunction(o.onClose)) o.onClose(event);
+		}
+		
+		event.stopPropagation();
+		event.preventDefault();
+		
+		function hide() {
+			$btnClose.off('click');
+			$dialog.remove();
+			$offset.remove();
+		}
+	}
+	
+	function ie6Fix($bg) {
+		if(!$.u.browser.ie6) return;
+		var s = $bg[0].style;
+		s.position = 'absolute';
+		s.setExpression('left', '(fakeVar = document.documentElement.scrollLeft) + "px"');
+		s.setExpression('top', '(fakeVar = document.documentElement.scrollTop) + "px"');
+		s.setExpression('width', '(fakeVar = document.documentElement.clientWidth) + "px"');
+		s.setExpression('height', '(fakeVar = document.documentElement.clientHeight) + "px"');
+	}
+}
+
+$.fn.dialog_lj.defaults = {
+	bgOpacity: 0.7,
+	classBg: 'dialog-bg',
+	classDialog: 'dialog',
+	classAvtive: 'dialog-active',
+	classBtnClose: 'dialog-close',
+	classTitle: 'dialog-title',
+	classContent: 'dialog-content',
+	draggable: false,
+	fxFade: false,
+	fxSlide: false,
+	fxDuration: 300,
+	fixed: false,
+	modal: true
+};
+
+$.fn.tab = function(options) {
+	var o = $.extend({}, $.fn.tab.Defaults, options);
+	if(!/mouseover|click/.test(o.event)) o.event = 'click';
+	
+	var $tabList = this,
+		$links = $tabList.find('.' + o.classLinks).find('.' + o.classLink),
+		$tabs = $tabList.find('.' + o.classTabs).find('.' + o.classTab),
+		$linkActive = null,
+		$tabActive = null;
+	
+	if(o.autoAttach) {
+		var r = String(Math.random()).substring(2);
+		$links.each(function(i, e) {$(this).attr('href', '#tabSheet-' + r + i)});
+		$tabs.each(function(i, e) {$(this).attr('id', 'tabSheet-' + r + i)});
+	}
+	$links.each(function() {if($(this).hasClass(o.classLinkActive)) $linkActive = $(this);});
+	$tabs.each(function() {if($(this).hasClass(o.classTabActive)) $tabActive = $(this);});
+	if(!$linkActive) $linkActive = $links.first().addClass(o.classLinkActive);
+	if(!$tabActive) {
+		$tabActive = $linkActive ? getTab($linkActive) : $tabs.first();
+		$tabActive.addClass(o.classTabActive).show();
+	}
+	if(o.event == 'mouseover') $links.on('click.tab', function(e) {return e.preventDefault();});
+	
+	$links.on(o.event + '.tab', function(e) {
+		if($(this).hasClass(o.classLinkActive)) return false;
+		
+		var $link = $(this),
+			$tab = getTab($link);
+		
+		$linkActive.removeClass(o.classLinkActive);
+		$linkActive = $link.addClass(o.classLinkActive);
+		if(o.fxFade || o.fxResize) {
+			$tab.createFx();
+			$tab.fx.startShow = $tab.fx.completeHide = true;
+			if(o.fxFade) $tab.fx.setFade();
+			if(o.fxResize) $tab.fx.set('height', $tabActive.height(), $tab.height());
+			if($tab.fx.isSetIn()) {
+				if(o.fxFade) {
+					$tabActive.fadeOut(100, function() {
+						switchTab($tab);
+						$tab.fx.playIn(o.fxDuration, function($tab) {
+							$tab.css({height: 'auto'});
+						});
+					});
+				}else {
+					switchTab($tab);
+					$tab.fx.playIn(o.fxDuration, function($tab) {
+						$tab.css({height: 'auto'});
+					});
+				}
+			}
+		}else switchTab($tab);
+		
+		return false;
+	});
+	
+	function getTab($link) {
+		var $tab = $($link.attr('href'));
+		if($tab.length == 0) throw new Error('[$.fn.tab] Cannot find related tab . Tab missing.');
+		return $tab;
+	}
+	
+	function switchTab($tab) {
+		if(o.preSwitch) o.preSwitch($tabActive, $tab);
+		$tabActive.removeClass(o.classTabActive).hide();
+		$tab.addClass(o.classTabActive).show();
+		$tabActive = $tab;
+		if(o.switchComplete && typeof o.switchComplete == 'function') o.switchComplete($tabActive);
+	}
+}
+	
+$.fn.tab.Defaults = {
+	autoAttach: true,
+	event: 'click',
+	classLinks: 'tab-nav',
+	classLink: 'tab-head',
+	classLinkActive: 'tab-head-active',
+	classTabs: 'tab-content',
+	classTab: 'tab-sheet',
+	classTabActive: 'tab-sheet-active',
+	fxFade: false,
+	fxResize: false,
+	fxDuration: 400
+}
+
+$.fn.list = function(options) {
+	var o = $.extend({}, $.fn.list.Defaults, options),
+		$list = this,
+		$lis = $list.children('li'),
+		$liContentActive;
+	
+	$lis.each(function() {
+		var $li = $(this),
+			$liLinks = getLiLink($li),
+			$liContent = getLiContent($li);
+		
+		if($liLinks.hasClass(o.classItemLinkActive)) activate($liLinks);
+		if($liContent.length > 0) {
+			//setFx($liContent);
+			$liLinks.on('click.list', function(e) {
+				e.preventDefault();
+				var $link = $(this);
+				
+				if($link.hasClass(o.classItemLinkActive)) destroy($liContent);
+				else {
+					build($liContent);
+					$link.addClass(o.classItemLinkActive);
+				}
+			});
+		}
+	});
+	
+	switch(o.selected) {
+		case 'first':
+			activate(getLiLink($lis.first())); break;
+		case 'last':
+			activate(getLiLink($lis.last())); break;
+		case 'all':
+			$lis.each(function() {activate(getLiLink($(this)));}); break;
+	}
+	
+	return $list;
+	
+	function build($liContent) {
+		if(o.exclusive && !$liContent.is($liContentActive)) destroy($liContentActive);
+		$liContentActive = $liContent.addClass(o.classItemContentActive);
+		if(o.fxFade || o.fxFold) {
+			var properties = {};
+			if(o.fxFade) {
+				$liContent.show().css({opacity: 0});
+				properties.opacity = 1;
+			}
+			if(o.fxFold) {
+				$liContent.css({height: 0});
+				properties.height = $liContent[0].scrollHeight;
+			}
+			$liContent.animate(properties, o.fxDuration, function() {clearStyle($(this), ['height', 'opacity']);});
+		}else {
+			$liContent.show();
+		}
+		//$liContent.fx.playIn(o.fxDuration);
+	}
+	
+	function destroy($liContent) {
+		if($.u.exist($liContent)) {
+			$liContent.removeClass(o.classItemContentActive);
+			$liContent.siblings('.' + o.classItemLink).removeClass(o.classItemLinkActive);
+			if(o.fxFade || o.fxFold) {
+				var properties = {};
+				if(o.fxFade) properties.opacity = 0;
+				if(o.fxFold) properties.height = 0;
+				$liContent.animate(properties, o.fxDuration, function() {$(this).removeAttr('style');});
+			}else {
+				$liContent.hide();
+			}
+			//if($liContent.fx.isSetOut()) $liContent.fx.playOut();
+			//else $liContent.hide();
+		}
+	}
+	
+	function getLiLink($li) {
+		return $li.find('.' + o.classItemLink);
+	}
+	
+	function getLiContent($e) {
+		switch($e[0].tagName.toLowerCase()) {
+			case 'li':
+			default:
+				return $e.find('.' + o.classItemContent);
+			case 'a':
+				return $e.siblings('.' + o.classItemContent);
+		}
+	}
+	
+	function setFx($liContent) {
+		$liContent.createFx();
+		$liContent.fx.startShow = $liContent.fx.completeHide = true;
+		if(o.fxFade) $liContent.fx.setFade();
+		if(o.fxFold) $liContent.fx.setFold('height', null, o.fxFoldDynamic);
+	}
+	
+	function activate($liLink) {
+		$liLink.addClass(o.classItemLinkActive);
+		$liContentActive = getLiContent($liLink).show();
+		setFx($liContentActive);
+	}
+	
+	function clearStyle($e, styleProperties) {
+		var inlineStyle = $e.attr('style');
+		var	pattern = new RegExp('(' + styleProperties.join('|') + ')\\:\\s*\\w+\\;', 'g');
+		
+		if(inlineStyle) $e.attr('style', inlineStyle.replace(pattern, ''));
+	}
+};
+
+$.fn.list.Defaults = {
+	classList: 'list',
+	classItemLink: 'listItem-link',
+	classItemLinkActive: 'listItem-link-active',
+	classItemContent: 'listItem-content',
+	classItemContentActive: 'listItem-content-active',
+	exclusive: false,
+	fxFade: false,
+	fxFold: false,
+	fxFoldDynamic: false,
+	fxDuration: 300,
+	selected: false
+}
+
+$.fn.tooltip = function(options) {
+	var o = $.extend({}, $.fn.tooltip.Defaults, options),
+		$target = this,
+		$tooltip,
+		thisTitle = $target.attr('title'),
+		classTempDiv = 'ui-temp-div';
+		
+	if(o.event == 'hover') $target.mouseover(build);
+	else $target.click(function(e) {
+		if($tooltip && $tooltip.hasClass(o.classTooltipActive)) destroy(e);
+		else build(e);
+	});
+	
+	function build(e) {
+		if(o.content) {
+			if($.u.exist(o.content)) $tooltip = o.content;
+			else if($.u.exist(o.content, 'string')) $tooltip = createDiv(o.content);
+			else $.u.event.stop(e);
+		}else {
+			$tooltip = $target.find('.' + o.classTooltip);
+			if($tooltip.length > 0) {
+				var $btnClose = $tooltip.find('.' + o.classTooltipClose);
+				if($btnClose.length > 0) $btnClose.unbind('click.tooltip').on('click.tooltip', destroy);
+			}else {
+				if(thisTitle && thisTitle.length > 0) $tooltip = createDiv(thisTitle);
+				else $.u.event.stop(e);
+			}
+		}
+		
+		if(o.context == 'global') $tooltip.pos();
+		if(thisTitle) $target.attr('title', '');
+		$target.addClass(o.classTargetActive).off('mouseover').mouseout(destroy);
+		$tooltip.addClass(o.classTooltipActive).mouseout(destroy);
+		
+		var x, y;
+		if(o.follow) {
+			$target.mousemove(function(e) {
+				$tooltip.move(e.pageX + o.offsetX, e.pageY + o.offsetY);
+				$.u.event.stop(e);
+			});
+		}else {
+			var targetX = o.context != 'global' ? $target[0].offsetLeft : $target.offset().left,
+				targetY = o.context != 'global' ? $target[0].offsetTop : $target.offset().top,
+				targetW = $target.width(),
+				targetH = $target.height(),
+				tooltipW = $tooltip.outerWidth(),
+				tooltipH = $tooltip.outerHeight();
+			switch(o.position) {
+				case 'top':
+					y = targetY - tooltipH - o.offsetY; break;
+				case 'right':
+					x = targetX + targetW + o.offsetX; break;
+				case 'bottom':
+				default:
+					y = targetY + targetH + o.offsetY; break;
+				case 'left':
+					x = targetX - tooltipW - o.offsetX; break
+			}
+			if(/left|right/.test(o.position)) {
+				switch(o.alignV) {
+					case 'top':
+					default:
+						y = targetY; break;
+					case 'bottom':
+						y = targetY - (tooltipH - targetH); break;
+					case 'center':
+						y = targetY - (tooltipH - targetH)/2; break;
+				}
+			}else {
+				switch(o.alignH) {
+					case 'left':
+					default:
+						x = targetX; break;
+					case 'right':
+						x = targetX - (tooltipW - targetW); break;
+					case 'center':
+						x = targetX - (tooltipW - targetW)/2; break;
+				}
+			}
+		}
+		$tooltip.move({
+			bleeding: true,
+			x: Math.round(x), 
+			y: Math.round(y)
+		});
+		
+		if(o.fxFade || o.fxSlide) {
+			$tooltip.createFx();
+			$tooltip.fx.startShow = $tooltip.fx.completeHide = true;
+			if(o.fxFade) $tooltip.fx.setFade();
+			if(o.fxSlide) {
+				var halfW = Math.round(tooltipW/2),
+					halfH = Math.round(tooltipH/2);
+				switch(o.fxSlideDir) {
+					case 'up':
+						$tooltip.fx.set('top', y + halfH, y); break;
+					case 'right':
+						$tooltip.fx.set('left', x - halfW, x); break;
+					case 'down':
+					default:
+						$tooltip.fx.set('top', y - halfH, y); break;
+					case 'left':
+						$tooltip.fx.set('left', x + halfW, x); break;
+				}
+			}
+			$tooltip.fx.playIn(o.fxDuration);
+		}else {
+			$tooltip.show();
+		}
+		
+		$.u.event.stop(e);
+	}
+	
+	function createDiv(txt) {
+		return $('<div>').addClass(o.classTooltip + ' ' + classTempDiv).text(txt)
+			.append($('<div class="triangle"></div>')).append($('<div class="triangle-border"></div>'));
+	}
+	
+	function destroy(event) {
+		var $over = $(event.relatedTarget);
+		if($over.hasClass(o.classTooltipActive)) return false;
+		if($tooltip.fx && $tooltip.fx.isSetOut()) $tooltip.fx.playOut(o.fxDuration, clear);
+		else {
+			$tooltip.hide();
+			clear();
+		}
+	}
+
+	function clear() {
+		$target.removeClass(o.classTargetActive).off('mouseout').mouseover(build);
+		$tooltip.removeClass(o.classTooltipActive);
+		if(thisTitle) $target.attr('title', thisTitle);
+		if($tooltip.hasClass(classTempDiv)) $tooltip.remove();
+	}
+};
+
+$.fn.tooltip.Defaults = {
+	alignH: 'left',
+	alignV: 'top',
+	classTooltip: 'tooltip',
+	classTooltipActive: 'tooltip-active',
+	classTooltipClose: 'tooltip-close',
+	content: null,
+	context: 'global',
+	event: 'hover',
+	follow: false,
+	fxFade: false,
+	fxSlide: false,
+	fxSlideDir: 'down',
+	fxDuration: 300,
+	offsetX: 10,
+	offsetY: 10,
+	position: 'bottom'
+};
+
+$.fn.draggable.defaults = {
+	bleeding: true,
+	scroll: false,
+	view: null,
+	trigger: null
+};
+
+$.fn.rollover = function(options) {
+	if(this.length == 0) return this;
+	
+	var o = $.extend({}, $.fn.rollover.defaults, options),
+		$target = this,
+		$active = $target.find('.' + o.classRolloverActive),
+		targetW = $target.innerWidth(),
+		targetH = $target.innerHeight(),
+		activeW = $active.outerWidth(true),
+		activeH = $active.outerHeight(true);
+		
+	$target.css({overflow: 'hidden'});
+	$active.pos({offset: $target}).createFx();
+	$active.fx.startShow = $active.fx.completHide = true;
+	if(o.fxFade) $active.fx.setFade();
+	if(o.fxSlide) {
+		switch(o.fxSlideDir) {
+			case 'top':
+				$active.css({left: 0}).fx.set('bottom', -activeH, 0); break;
+			case 'right':
+				$active.css({top: 0}).fx.set('right', -activeW, 0); break;
+			case 'down':
+			default:
+				$active.css({left: 0}).fx.set('top', -activeH, 0); break;
+			case 'left':
+				$active.css({top: 0}).fx.set('left', -activeW, 0); break;
+		}
+	}
+	
+	$target.hover(function(e) {
+		build();
+	}, function(e) {
+		destroy();
+	});
+	
+	function build() {
+		if($active.fx.isSetIn()) {
+			if(!o.fxSlide) $active.move(0, 0);
+			$active.fx.playIn();
+		}else $active.move(0, 0).show();
+	}
+	
+	function destroy() {
+		if($active.fx.isSetOut()) $active.fx.playOut();
+		else $active.hide();
+	}
+};
+
+$.fn.rollover.defaults = {
+	classRollover: 'ui-rollover',
+	classRolloverActive: 'ui-rollover-active',
+	fxFade: false,
+	fxSlide: false,
+	fxSlideDir: 'down'
+};
+
+$.fn.menu = function(options) {
+	var o = $.extend({}, $.fn.menu.defaults, options);
+	var $menuGroup = this;
+	
+	attachMenu($menuGroup, 'menu');
+	
+	function attachMenu($menuGroup, menuMode) {
+		var $menuItems = $menuGroup.children('li');
+		
+		$menuItems.each(function() {
+			var $menuItem = $(this);
+			var $menuLink = $menuItem.children('.' + o.clsMenuLink);
+			var clsMenu = menuMode == 'menu' ? o.clsMenu : o.clsSubMenu;
+			var $menu = $menuItem.children('.' + clsMenu);
+			
+			if($menu.length > 0) {
+				$menuLink.on('mouseover.menu', function(event) {
+					var $over = $(event.relatedTarget);
+					if(!isMenu($over)) showMenu($menu, $menuLink);
+				});
+				$menuLink.on('mouseout.menu', function(event) {
+					var $over = $(event.relatedTarget);
+					if(!isMenu($over, $menu)) hideMenu($menu, $menuLink, false);
+				});
+				$menu.on('mouseleave.menu', function(event) {
+					event.stopPropagation();
+					var $over = $(event.relatedTarget);
+					if(!$over.is($menuLink)) {
+						if(isParentMenu($over, $menuLink)) hideMenu($menu, $menuLink, false);
+						else hideMenu($menu, $menuLink, true);
+					}
+				});
+				
+				attachMenu($menu, 'subMenu');
+			}
+		});
+	}
+	
+	function isMenu($over, $menu) {
+		return getMenu($over).is($menu);
+	}
+	
+	function isParentMenu($over, $menuLink) {
+		var $menu = getMenu($over);
+		var $parentMenu = getMenu($menuLink);
+		return $menu.is($parentMenu);
+	}
+	
+	function getMenu($e) {
+		return $e.hasClass(o.clsMenu) ? $e : $e.parents('.' + o.clsMenu).first();
+	}
+
+	function showMenu($menu, $menuLink) {
+		$menuLink.addClass(o.clsMenuLinkActive);
+		if(o.fxFade) $menu.fadeIn(o.duration);
+		else $menu.show();
+	}
+	
+	function hideMenu($menu, $menuLink, hideAll) {
+		$menuLink.removeClass(o.clsMenuLinkActive);
+		if(o.fxFade) $menu.fadeOut(o.duration);
+		else $menu.hide();
+		if(hideAll && $menu.hasClass(o.clsSubMenu)) {
+			var $parentMenu = $menu.parents('.' + o.clsMenu).first();
+			var $parentMenuLink = $parentMenu.prevAll('.' + o.clsMenuLink).first();
+			hideMenu($parentMenu, $parentMenuLink, true);
+		}
+	}
+};
+
+$.fn.menu.defaults = {
+	clsMenuItem: 'menu-item',
+	clsMenuLink: 'menu-link',
+	clsMenuLinkActive: 'menu-link-active',
+	clsMenu: 'menu',
+	clsSubMenu: 'menu-sub',
+	fxFade: false,
+	duration: 300
+};
+
+$.fn.inputText = function(options) {
+	var o = $.extend({}, $.fn.inputText.defaults, options);
+	var $input = this;
+	var ns = '.inputText';
+
+	build();
+
+	function build() {
+		if(o.placeholder || (window.Modernizr && !Modernizr.input.placeholder)) {
+			var placeholder = $input.attr('placeholder') || o.placeholder;
+			var isEmpty = true;
+
+			if($input.val().length == 0) {
+				$input.val(placeholder);
+				$input.addClass(o.clsPrompt);
+			}
+
+			$input.on('focus' + ns, function(event) {
+				if($input.val() == placeholder) {
+					$input.val('').removeClass(o.clsPrompt);
+					isEmpty = false;
+				}
+			});
+			$input.on('blur' + ns, function(event) {
+				if($input.val().length == 0) {
+					$input.val(placeholder).addClass(o.clsPrompt);
+					isEmpty = true;
+				}
+			});
+		}
+
+		if(o.selectOnFocus) $input.on('focus' + ns, function(event) {
+			$input.trigger('select');
+		});
+	}
+};
+$.fn.inputText.defaults = {
+	clsPrompt: 'prompt',
+	placeholder: '',
+	selectOnFocus: false
+};
+})(jQuery);

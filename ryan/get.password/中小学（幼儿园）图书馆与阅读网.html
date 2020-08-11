@@ -1,0 +1,1053 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0060)http://www.co-library.com/front/View/EssaySubmit.aspx?type=1 -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- InstanceBeginEditable name="doctitle" -->
+    <title>
+	中小学（幼儿园）图书馆与阅读网
+</title>
+    <!-- InstanceEndEditable -->
+    <link href="./中小学（幼儿园）图书馆与阅读网_files/style.css" rel="stylesheet" type="text/css">
+    <script src="./中小学（幼儿园）图书馆与阅读网_files/hm.js.download"></script><script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/jquery-1.10.2.min.js.download"></script>
+
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/ini.js.download"></script>
+    <!-- InstanceBeginEditable name="head" -->
+    <link href="./中小学（幼儿园）图书馆与阅读网_files/style-page.css" rel="stylesheet" type="text/css">
+    <!-- InstanceEndEditable -->
+
+    <style type="text/css">
+        @import url(../Scripts/jquery.ui.plupload/css/jquery.ui.plupload.css);
+    </style>
+    <link href="./中小学（幼儿园）图书馆与阅读网_files/jquery-ui.css" rel="stylesheet">
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/jquery.min.js.download"></script>
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/jquery-ui.min.js.download"></script>
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/browserplus-min.js.download"></script>
+
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/plupload.full.js.download"></script>
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/zh-cn.js.download"></script>
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/jquery.ui.plupload.js.download"></script>
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/utility.js.download"></script>
+    <script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/jquery.ui.js.download"></script>
+    <!-- InstanceBeginEditable name="head" -->
+    <!-- InstanceEndEditable -->
+    
+    <script type="text/javascript">
+        // Convert divs to queue widgets when the DOM is ready
+        $(function () {
+            clearFileList();
+            $("#uploader").plupload({
+                // General settings
+                runtimes: 'gears,flash,silverlight,browserplus,html5', // 这里是说用什么技术引擎
+                url: 'uploadFiles.ashx', // 服务端上传路径
+                max_file_size: '10240kb', // 文件上传最大限制。
+                chunk_size: '1048576', // 上传分块每块的大小，这个值小于服务器最大上传限制的值即可。
+                unique_names: true, // 上传的文件名是否唯一
+
+                // Resize images on clientside if we can
+                //// 是否生成缩略图（仅对图片文件有效）
+                //resize: { width: 320, height: 240, quality: 90 },
+
+                // Specify what files to browse for
+                ////  这个数组是选择器，就是上传文件时限制的上传文件类型
+
+
+                filters: {
+                    mime_types: [ //只允许上传图片和zip文件
+                { title: "Image files", extensions: "jpg,gif,png" },
+                { title: "Zip files", extensions: "zip,rar,7z" }
+                    ],
+                    max_file_size: '400kb', //最大只能上传400kb的文件
+                    prevent_duplicates: true //不允许选取重复文件
+                },
+
+                // Flash settings
+                // plupload.flash.swf 的所在路径
+                flash_swf_url: '../Scripts/plupload.flash.swf',
+
+                // Silverlight settings
+                // silverlight所在路径
+                silverlight_xap_url: '../Scripts/plupload.silverlight.xap'
+
+            });
+            var type = getUrlParam("type");
+            var uploader = $('#uploader').plupload('getUploader');
+            uploader.bind('FilesAdded', function (up, files) {
+                if (type == 1 || type == 2 || type == 5) {
+                    if (up.files.length > 4) {
+                        uploader.splice(4, up.files.length-4);
+                    }
+                    //else
+                    //{
+                    //    uploader.splice(files.length, files.length);
+                    //}
+                } else {
+                    if (up.files.length > 1) {
+                        uploader.splice(1, up.files.length - 1);
+                    }
+                }
+            });
+            uploader.bind('FilesRemoved', function (up, files) {
+                if (files.length >=1)
+                {
+                    uploader.removeFile(files[0]);
+                    $.ajax({
+                        type: "POST",
+                        url: "FileRemove.ashx",
+                        data: { file: files[0].name }
+                    });
+                }
+               
+            });
+            uploader.bind('UploadComplete', function (up, files) {
+                $('#btnOK').attr("disabled", false);
+            });
+            $('#uploader_start').click(function () {
+                $('#btnOK').attr("disabled", true);
+            })
+
+            ddlChange();
+            njChange();
+            GetTypeName();
+            typeActive();
+
+            //$(document).keydown(function (event) {
+            //    if (event.keyCode == 13) {
+            //        $('form').each(function () {
+            //            event.preventDefault();
+            //        });
+            //    }
+            //});
+            //$('#txtTitle').keydown(function (e) {
+            //    if (e.keyCode == 13) {
+            //        $('#btnOK').trigger('click');
+            //        return;
+            //    }
+            //});
+            //$('#txtZhidao').keydown(function (e) {
+            //    if (e.keyCode == 13) {
+            //        $('#btnOK').trigger('click');
+            //        return;
+            //    }
+            //});
+
+            //document.onkeydown = function (e) {
+            //    if (e.target.id == 'txtContent') return;
+            //    var ev = document.all ? window.event : e;
+            //    if (ev.keyCode == 13) {
+            //        $('#btnOK').trigger('click');
+            //    }
+            //}
+        });
+        function getUrlParam(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
+            var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+            if (r != null) return unescape(r[2]); return null; //返回参数值
+        }
+
+        function typeActive() {
+            var type = parseInt(getUrlParam('type'));
+            if (isNaN(type) || type < 1 || type > 7) location = location.pathname + '?type=1'
+            $('#type' + type).addClass('active');
+        }
+        function clearFileList() {
+            utility.ajaxMethod('EssaySubmit.aspx/ClearFileList', null, function (data) {
+            });
+        }
+        function GetTypeName() {
+            var type = getUrlParam("type");
+            switch (type) {
+                case "1":
+                    $('#lblTypeName').text('主题活动');
+                    $('#lblTypeName1').text('主题活动');
+                    if ($('#role').css("display") == "block") {
+                        $('#typeImg').addClass('uploadType1-teacher');
+                    } else {
+                        $('#typeImg').addClass('uploadType1-student');
+                    }
+                    $('.fileCount').text('4');
+                    $('#upLable').css('display', 'block');
+                    $('#dnzp').css('display', 'none');
+                    $('#scgs').text(',允许上传格式：jpg,gif,png,jpeg,pdf,cdr,flv,swf');
+                    $('#showScgs').css('display', 'none');
+                    break;
+                case "2":
+                    $('#lblTypeName').text('文学创作');
+                    $('#lblTypeName1').text('文学创作');
+                    $('#typeImg').addClass('uploadType2');
+                    $('.fileCount').text('4');
+                    $('#upLable').css('display', 'block');
+                    $('#dnzp').css('display', 'none');
+                    $('#scgs').text(',允许上传格式：jpg,gif,png,jpeg,pdf,cdr,flv,swf');
+                    $('#showScgs').css('display', 'none');
+                    break;
+                case "3":
+                    $('#lblTypeName').text('电脑作品');
+                    $('#lblTypeName1').text('电脑作品');
+                    $('#typeImg').addClass('uploadType3');
+                    $('.fileCount').text('1');
+                    $('#upLable').css('display', 'block');
+                    $('#dnzp').css('display', 'block');
+                    $('#scgs').text('允许上传格式：jpg,gif,png,jpeg,doc,docx,xls,xlsx,ppt,pptx,rar,zip,txt,mp4,mp3,flv,swf');
+                    $('#showScgs').css('display', 'block');
+                    break;
+                case "4":
+                    $('#lblTypeName').text('艺术创作');
+                    $('#lblTypeName1').text('艺术创作');
+                    $('#typeImg').addClass('uploadType4');
+                    $('.fileCount').text('1');
+                    $('#upLable').css('display', 'block');
+                    $('#dnzp').css('display', 'none');
+                    $('#scgs').text(',允许上传格式：jpg,gif,png,jpeg,pdf,cdr,doc,docx,flv,swf,mp4');
+                    $('#showScgs').css('display', 'none');
+                    break;
+                case "5":
+                    $('#lblTypeName').text('科技作品');
+                    $('#lblTypeName1').text('科技作品');
+                    $('#typeImg').addClass('uploadType5');
+                    $('.fileCount').text('4');
+                    $('#upLable').css('display', 'block');
+                    $('#dnzp').css('display', 'block');
+                    $('#scgs').text('允许上传格式：jpg,gif,png,jpeg,pdf,cdr,doc,docx,flv,swf,rar,zip');
+                    $('#showScgs').css('display', 'block');
+                    break;
+                case "6":
+                    $('.lblTitle').text('推荐书名：');
+                    $('.lblRemark').text('推荐理由：');
+                    $('#zdls').css('display', 'none');
+
+                    $('#lblTypeName').text('读书荐书');
+                    $('#lblTypeName1').text('读书荐书');
+                    $('#typeImg').addClass('uploadType6');
+                    $('#upLable').css('display', 'none');
+                    $('#dnzp').css('display', 'none');
+                    $('#scgs').text('');
+                    $('#showScgs').css('display', 'none');
+                    break;
+                case "7":
+                    $('#lblTypeName').text('高中文献综述');
+                    $('#lblTypeName1').text('高中文献综述');
+                    $('#typeImg').addClass('uploadType7');
+                    $('.fileCount').text('4');
+                    $('#upLable').css('display', 'block');
+                    $('#dnzp').css('display', 'block');
+                    $('#scgs').text('允许上传格式：jpg,gif,png,jpeg,pdf,cdr,doc,docx,flv,swf,rar,zip');
+                    $('#showScgs').css('display', 'block');
+                    $('#remark').css('display', 'block');
+                    $('#keywords').css('display', 'block');
+                    $('#reference').css('display', 'block');
+                    $('#cnki').css('display', 'block');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        function ddlChange() {
+            var type = parseInt(getUrlParam("type"));
+            $('#upload').css('display', 'none');
+            //$('#typeName').text($('#ddlType')[0][type - 1].innerText);
+
+            if (type != 6) {
+                var uploader = $('#uploader').plupload('getUploader');
+                uploader.settings.filters.length = 0;
+                if (type == 3) {
+                    uploader.settings.filters = [
+                        {
+                            title: "Image files",
+                            extensions: "jpg,gif,png,jpeg,doc,docx,xls,xlsx,ppt,pptx,rar,zip,txt,mp4,mp3,flv,swf"
+                        }
+                    ];
+                    uploader.settings.max_file_size = '10485760';//10mb
+                } else if (type == 1 || type == 2) {
+                    uploader.settings.filters = [
+                        { title: "Image files", extensions: "jpg,gif,png,jpeg,pdf,cdr,flv,swf" }
+                    ];
+                    uploader.settings.max_file_size = '4194304';//4mb
+                } else if (type == 4) {
+                    uploader.settings.filters = [
+                        { title: "Image files", extensions: "jpg,gif,png,jpeg,pdf,cdr,doc,docx,flv,swf,mp4" }
+                    ];
+                    uploader.settings.max_file_size = '10485760';//10mb
+                } else {
+                    uploader.settings.filters = [
+                        { title: "Image files", extensions: "jpg,gif,png,jpeg,pdf,cdr,doc,docx,flv,swf,rar,zip" }
+                    ];
+                    uploader.settings.max_file_size = '10485760';//10mb
+                }
+                if (type == 1 || type == 2) {//主题，文学
+                    //$('#content').css('display', 'block');
+                    $('#upload').css('display', 'none');
+                    $('#uploadImg').css('display', 'block');
+
+                } else {//电脑，艺术，校刊
+                    //$('#content').css('display', 'none');
+                    $('#upload').css('display', 'block');
+                }
+                $('#literature').css('display', 'none');
+
+            } else {//读书荐书
+                $('#upload').css('display', 'none');
+                //$('#content').css('display', 'block');
+                $('#literature').css('display', 'block');
+
+            }
+        }
+        function uploadClick() {
+            $('#uploadImg').css('display', 'none');
+            $('#upload').css('display', 'block');
+        }
+
+
+        function typeChange(type) {
+            var urlType = utility.getUrlParam("type");
+            if (urlType == type.toString()) {
+                return false;
+            }
+
+            var $dialogConfirm = $('.dialog-confirm');
+            $('.btn-confirm', $dialogConfirm).click(function (event) {
+                event.preventDefault();
+                $dialogConfirm.trigger('confirm');
+            });
+            $('.btn-cancel', $dialogConfirm).click(function (event) {
+                event.preventDefault();
+                $dialogConfirm.trigger('cancel');
+            });
+            $dialogConfirm.off('confirm').on('confirm', function () {
+                location = 'EssaySubmit.aspx?type=' + type;
+            });
+            $dialogConfirm.off('cancel').on('cancel', function () {
+                return false;
+            });
+
+            //event.preventDefault();
+            $('.dialog-confirm').dialog_lj({
+                bgOpacity: 0,
+                modal: false,
+                fixed: true,
+                title: '提示信息：',
+                content: '您正在进行投稿栏目的切换，未提交的内容将无法保存，是否继续？'
+            });
+            return false;
+            //if (confirm('您正在进行上传类别的切换，未提交的内容将无法保存，是否继续？')) {
+            //    utility.ajaxMethod('EssaySubmit.aspx/ClearList', null, function (data) {
+            //        location = 'EssaySubmit.aspx?type=' + type;
+            //    });
+            //}
+            //return false;
+        }
+
+        var njChange = function () {
+            if ($('#ddlNianji').val() == '17') {
+                //显示'其他'文本框
+                $('#txtNjOther').css('display', 'block');
+            } else {
+                //隐藏'其他'文本框
+                $('#txtNjOther').val('');
+                $('#txtNjOther').css('display', 'none');
+            }
+        }
+
+        var bjChange = function () {
+            if ($('#ddlBanji').val() == '16') {
+                //显示'其他'文本框
+                $('#txtBjOther').css('display', 'block');
+            } else {
+                //隐藏'其他'文本框
+                $('#txtBjOther').val('');
+                $('#txtBjOther').css('display', 'none');
+            }
+        }
+
+        function checkTitle() {
+            if ($('#role').css("display") == "block") {
+                $('#sTitle').text('');
+                $('#sTitle').css('display', 'none');
+                return;
+            }
+
+            var title = $('#txtTitle').val();
+            var parameter = "{'title':'" + title + "','type' : '" + getUrlParam("type") + "'}";
+            utility.ajaxMethod('EssaySubmit.aspx/CheckTitle', parameter, function (data) {
+                if (data.d == false) {
+                    $('#sTitle').text('注意:同一作品不能重复上传，除非删除原来作品。已经审核通过的也不能重复上传');
+                    $('#sTitle').css('display', 'block');
+                    $('#txtTitle').focus();
+                    $('#isBtn').css("display", 'none');
+                    return;
+                } else {
+                    $('#sTitle').text('');
+                    $('#sTitle').css('display', 'none');
+                    $('#isBtn').css("display", 'block');
+                }
+            });
+        }
+
+        var valid = false;
+        function checkSub() {
+            if (valid) return true;
+
+            var maxFile = 4;
+            var type = getUrlParam("type");
+            if ($.trim($('#txtTitle').val()) == '') {
+                $('#sTitle').text('请输入标题');
+                $('#sTitle').css('display', 'block');
+                $('#txtTitle').focus();
+                return false;
+            } else {
+                $('#sTitle').text('');
+                $('#sTitle').css('display', 'none');
+            }
+
+            var uploader = $('#uploader').plupload('getUploader');
+            if (type == 3 || type == 4) {
+                if (uploader.files.length > 0) {
+                    if (uploader.files.length > 1) {
+                        utility.showDialog('最多上传' + 1 + '个文件');
+                        return false;
+                    }
+                } else {
+                    utility.showDialog('请上传文件');
+
+                    return false;
+                }
+                if (type == 6) {
+                    if ($('#txtLiterature').val() == '') {
+                        $('#sLiterature').text('请输入出版社名称');
+                        $('#sLiterature').css('display', 'block');
+                        $('#txtLiterature').focus();
+                        return false;
+                    } else {
+                        $('#sLiterature').text('');
+                        $('#sLiterature').css('display', 'none');
+                    }
+                    if ($('#txtContent').val() == '') {
+                        $('#sContent').text('请输入内容');
+                        $('#sContent').css('display', 'block');
+                        $('#txtContent').focus();
+                        return false;
+                    } else {
+                        $('#sContent').text('');
+                        $('#sContent').css('display', 'none');
+                    }
+                }
+            } else if (type == 1 || type == 2 || type == 5) {
+                if (uploader.files.length > 0) {
+                    if (uploader.files.length > maxFile) {
+
+                        utility.showDialog('最多上传' + maxFile + '个文件');
+                        return false;
+                    }
+                }
+                if (type == 1 || type == 2) {
+                    if ($('#txtContent').val() == '') {
+                        $('#sContent').text('请输入内容');
+                        $('#sContent').css('display', 'block');
+                        $('#txtContent').focus();
+                        return false;
+                    } else {
+                        $('#sContent').text('');
+                        $('#sContent').css('display', 'none');
+                    }
+                }
+            } else {
+                if ($('#txtContent').val() == '') {
+                    $('#sContent').text('请输入内容');
+                    $('#sContent').css('display', 'block');
+                    $('#txtContent').focus();
+                    return false;
+                } else {
+                    $('#sContent').text('');
+                    $('#sContent').css('display', 'none');
+                }
+            }
+
+            if ($('#role').css("display") == "block") {
+                if ($('#txtAuthor').val() == '') {
+                    $('#sAuthor').text('请输入原作者');
+                    $('#sAuthor').css('display', 'block');
+                    $('#txtAuthor').focus();
+                    return false;
+                } else {
+                    $('#sAuthor').text('');
+                    $('#sAuthor').css('display', 'none');
+                }
+            }
+
+
+
+            if (type == 6) {
+                var $dialogConfirm = $('.dialog-confirm');
+                $('.btn-confirm', $dialogConfirm).click(function (event) {
+                    event.preventDefault();
+                    $dialogConfirm.trigger('confirm');
+                });
+                $('.btn-cancel', $dialogConfirm).click(function (event) {
+                    event.preventDefault();
+                    $dialogConfirm.trigger('cancel');
+                });
+                $dialogConfirm.off('confirm').on('confirm', function () {
+                    valid = true;
+                    $('#btnOK').trigger('click');
+                });
+                $dialogConfirm.off('cancel').on('cancel', function () {
+                    return false;
+                });
+
+                //event.preventDefault();
+                $('.dialog-confirm').dialog_lj({
+                    bgOpacity: 0,
+                    modal: false,
+                    fixed: true,
+                    title: '提示信息：',
+                    //content: '您上传的作品不参与本次读书活动评奖，仅作为展示'
+                    content: '本人承诺提交的作品（包括文字和图片作品）为自己原创。如出现版权纠纷问题，本人愿意承担由此产生的一切责任。如果本作品获奖，本人同意并授权主办方出版我的作品。作品出版后，出版社赠送样书壹册，不再另外支付稿酬！提交的作品会作为最终参评的作品，无法再进行修改，是否确认提交？'
+                });
+                return false;
+                //if (!confirm('您上传的作品不参与本次读书活动评奖，仅作为展示')) {
+                //    return false;
+                //}
+            } else {
+                var $dialogConfirm = $('.dialog-confirm');
+                $('.btn-confirm', $dialogConfirm).click(function (event) {
+                    event.preventDefault();
+                    $dialogConfirm.trigger('confirm');
+                });
+                $('.btn-cancel', $dialogConfirm).click(function (event) {
+                    event.preventDefault();
+                    $dialogConfirm.trigger('cancel');
+                });
+                $dialogConfirm.off('confirm').on('confirm', function () {
+                    valid = true;
+                    $('#btnOK').trigger('click');
+                });
+                $dialogConfirm.off('cancel').on('cancel', function () {
+                    return false;
+                });
+
+                //event.preventDefault();
+                $('.dialog-confirm').dialog_lj({
+                    bgOpacity: 0,
+                    modal: false,
+                    fixed: true,
+                    title: '提示信息：',
+                    content: '本人承诺提交的作品（包括文字和图片作品）为自己原创。如出现版权纠纷问题，本人愿意承担由此产生的一切责任。如果本作品获奖，本人同意并授权主办方出版我的作品。作品出版后，出版社赠送样书壹册，不再另外支付稿酬！提交的作品会作为最终参评的作品，无法再进行修改，是否确认提交？'
+                });
+                return false;
+                //if (!confirm('提交的作品会作为最终参评的作品，无法再进行修改，是否确认提交？')) {
+                //    return false;
+                //}
+            }
+            return true;
+        }
+    </script>
+</head>
+<body style="">
+    <form method="post" action="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1" id="form1">
+<div class="aspNetHidden">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUKMTY4NDE4NDM3OA9kFgICAw9kFgQCAQ9kFggCAQ8WAh4Fc3R5bGUFDWRpc3BsYXk6bm9uZTtkAgMPFgIfAAUOZGlzcGxheTpibG9jazsWAgIBDw8WAh4EVGV4dAUJ5YiY5Lmm6IifZGQCBQ8WAh4LXyFJdGVtQ291bnQCARYCZg9kFgJmDxUCATRF5YWz5LqO5byA5bGVIDIwMjAg5bm05LiK5rW35biC5Lit5bCP5a2m55Sf5pqR5pyf6K+75Lmm5rS75Yqo55qE6YCa55+lZAIHDw8WAh8BBQ4xOTIuMTY4LjE1OS44NGRkAgMPFgIfAAUNZGlzcGxheTpub25lOxYEAgEPEGQQFQ0J5LiA5bm057qnCeS6jOW5tOe6pwnkuInlubTnuqcJ5Zub5bm057qnCeS6lOW5tOe6pwnlha3lubTnuqcJ5LiD5bm057qnCeWFq+W5tOe6pwnkuZ3lubTnuqcP6auY5Lit5LiA5bm057qnD+mrmOS4reS6jOW5tOe6pw/pq5jkuK3kuInlubTnuqcG5YW25LuWFQ0BNQE2ATcBOAE5AjEwAjExAjEyAjEzAjE0AjE1AjE2AjE3FCsDDWdnZ2dnZ2dnZ2dnZ2dkZAIFDxBkEBUQBDHnj60EMuePrQQz54+tBDTnj60ENeePrQQ254+tBDfnj60EOOePrQQ554+tBTEw54+tBTEx54+tBTEy54+tBTEz54+tBTE054+tBTE154+tBuWFtuS7lhUQATEBMgEzATQBNQE2ATcBOAE5AjEwAjExAjEyAjEzAjE0AjE1AjE2FCsDEGdnZ2dnZ2dnZ2dnZ2dnZ2dkZGQMBNk4Q5sA3ARezs0qK5Sb+n1E7g==">
+</div>
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="116E316B">
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEdABFsdacNPDIk7rHpePR7/bvfV14+zsjG92ooi/i+9b1oag8ecTZgoifsKSGzg/v6pFVWJKev2WXX/Eys+bkupuSYZF6AacUCvI64t8MxKjbTUDnwGshdKZDdqeFqZq+xOSGH5vO6zpFa3gXXVoSi2wjI70jVXZbKKvdMccsQ0DR0e3UyGqfW/0GwaX7mGCK0DpjnNZrJCJRCHdild+n0eSCRygMFGMwAbq/lHDus8hYq9SUsm4q5idKOgIUpRDrnrfj8fy/KU6WITf8v1AWFbhmBF+qD16icc+/s2EG81zb7SemJBruLvEuJBBmyP3PDW8NMmyrl4W1Pj+Lepz8bXMM+RSciNdPYWmINCrip1wqw0wh0UvlBGeBS1WtR2ih/Y+uddeYd">
+</div>
+
+        <div class="layout">
+            
+<script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/ini.js.download"></script>
+<script type="text/javascript" src="./中小学（幼儿园）图书馆与阅读网_files/jquery.carouFredSel-6.2.1-packed.js.download"></script>
+<script>
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?4759c0efdd69cedf078eb034262a61c3";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+<script>
+
+    $(function () {
+
+        $('#UserPassword').on('keypress', function (event) {
+            if (event.keyCode == 13) {
+                login1();
+            }
+
+        });
+        var url = window.location.pathname;
+        var name = url.substring(url.lastIndexOf('/') + 1, (url.length - 5));
+        switch (name.toLocaleLowerCase()) {
+            case "index": $('#title1').addClass('active'); return;
+            case "essaylist": $('#title2').addClass('active'); return;
+            case "userinfoedit":
+            case "myessaydetail":
+                $('#title3').addClass('active'); return;
+            case "award":
+                $('#title4').addClass('active'); return;
+            case "ranking":
+                $('#title6').addClass('active'); return;
+            case "essaysubmit":
+                $('#title5').addClass('active'); return;
+            default: return;
+        }
+
+
+    });
+    function login() {
+        var parameter = "{'userName':'" + $('.name')[1].value + "','pwd':'" + $('.pwd')[1].value + "'}";
+        utility.ajaxMethod('../../index.aspx/UserLogin', parameter, function (data) {
+            if (data.d < 0) {
+                utility.showDialog('用户名或密码错误');
+            } else {
+                if (data.d == 2) {
+                    $('.dialog-login').hide();
+                    var $dialogConfirm = $('.dialog-confirm');
+
+
+                    $('.btn-confirm', $dialogConfirm).click(function (event) {
+                        $dialogConfirm.trigger('confirm');
+
+                    });
+                    $dialogConfirm.off('confirm').on('confirm', function () {
+                        location = '../../front/View/UserInfoEdit.aspx';
+                    });
+
+                    $('.dialog-confirm').dialog_lj({
+                        bgOpacity: 0,
+                        modal: false,
+                        fixed: true,
+                        title: '提示信息：',
+                        content: '2019年，比去年升一年级了，请您按照今年暑假前的学籍信息，更新您的资料！'
+                    });
+
+                } else {
+                    if ($('.lblUrl').text() == '') window.location.href = "../../index.aspx";
+                    else location = $('.lblUrl').text();
+                }
+            }
+        });
+    }
+    function login1() {
+        var parameter = "{'userName':'" + $('.name1')[0].value + "','pwd':'" + $('.pwd1')[0].value + "'}";
+        utility.ajaxMethod('../../index.aspx/UserLogin', parameter, function (data) {
+            if (data.d < 0) {
+                utility.showDialog('用户名或密码错误');
+            } else {
+                if (data.d == 2) {
+                    $('.dialog-login').hide();
+                    var $dialogConfirm = $('.dialog-confirm');
+
+                    $('.btn-confirm', $dialogConfirm).click(function (event) {
+                        $dialogConfirm.trigger('confirm');
+                    });
+                    $dialogConfirm.off('confirm').on('confirm', function () {
+                        location = '../../front/View/UserInfoEdit.aspx';
+                    });
+
+                    $('.dialog-confirm').dialog_lj({
+                        bgOpacity: 0,
+                        modal: false,
+                        fixed: true,
+                        title: '提示信息：',
+                        content: '2019年，比去年升一年级了，请您按照今年暑假前的学籍信息，更新您的资料！'
+                    });
+
+                } else {
+                    location = "../../index.aspx";
+                }
+
+            }
+        });
+    }
+
+    function loginOut() {
+        utility.ajaxMethod('../../index.aspx/LoginOut', null, function (data) {
+            if (data.d != '') {
+                location = data.d.substring(0, data.d.lastIndexOf('/'));
+            }
+        });
+    }
+    function isShowLogin() {
+        utility.ajaxMethod('../../index.aspx/isLogin', null, function (data) {
+            if (data.d > 0) {
+                event.preventDefault();
+                $('.dialog-login').dialog_lj({
+                    modal: false,
+                    fixed: true
+                });
+            }
+        });
+    }
+
+
+
+
+</script>
+
+<div class="header">
+    <h1 class="seo-text">2019年上海市中小学生暑期系列读书活动</h1>
+    <ul class="header-globalNav">
+        <li><a class="home" href="http://www.co-library.com/index.aspx" title="" id="title1">首页</a></li>
+        
+        <li><a class="sub-browse" href="http://www.co-library.com/front/View/EssayList.aspx?type=1" title="" id="title2">作品展示</a></li>
+        
+        <li><a class="sub-group active" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1" title="" id="title5" onclick="isShowLogin();">我要投稿</a></li>
+        <li><a class="sub-account" href="http://www.co-library.com/front/View/MyEssayDetail.aspx" title="" id="title3" onclick="isShowLogin();">个人中心</a></li>
+        <li><a class="sub-awards" href="http://www.co-library.com/front/View/award.aspx" title="" id="title4">获奖公告</a></li>
+        
+        <li><a class="sub-rank" href="http://www.co-library.com/front/View/Ranking.aspx" title="" id="title6">排行榜</a></li>
+    </ul>
+    <div id="head_noLogged" class="header-login" style="display:none;">
+        <label>用户名：<input name="head$UserName" type="text" id="head_UserName" class="name1"></label>
+        <label>密  码：<input name="AccountPassword" type="password" id="UserPassword" class="pwd1"></label>
+        
+        <a onclick="login1()" style="cursor: pointer;" class="btn">登录</a>
+        <a class="btn" href="http://www.co-library.com/front/View/Regist.aspx">注册</a>
+        <label><a href="http://www.co-library.com/front/View/ForgetPwd.aspx">忘记密码</a></label>
+        
+    </div>
+
+    <div id="head_logged" class="header-login" style="display:block;">
+        <h2>已登录</h2>
+        <div class="login-input">
+            <label>欢迎您！<span id="head_lblName">刘书舟</span></label>
+            <a onclick="loginOut()" style="cursor: pointer;" class="btn">退出</a>
+            
+            
+        </div>
+    </div>
+    <div class="header-post">
+        <h2><a class="seo-text" target="_blank" href="http://www.co-library.com/front/View/NoticeList.aspx">活动公告：</a></h2>
+        <div class="caroufredsel_wrapper" style="display: block; text-align: start; float: none; position: absolute; top: 7px; right: 80px; bottom: 15px; left: 150px; z-index: 9; width: 280px; height: 42px; margin: 0px; overflow: hidden;"><ul style="text-align: left; float: none; position: absolute; top: 0px; right: auto; bottom: auto; left: 0px; margin: 0px; height: 126px; width: 280px;">
+            
+                    <li style="">
+                        <a href="http://www.co-library.com/front/view/NoticeInfo.aspx?id=4" target="_blank">
+                            关于开展 2020 年上海市中小学生暑期读书活动的通知
+                        </a>
+                    </li>
+                
+        </ul></div>
+    </div>
+</div>
+<div style="display: none;">
+    <span id="head_lblLocalHostServer">192.168.159.84</span>
+</div>
+
+
+<div class="template">
+    <div class="dialog dialog-login">
+        <div class="dialog-box">
+            <h2>用户登录<a class="dialog-close seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1#">关闭</a></h2>
+            <div class="loginForm">
+                <div class="loginForm-field">
+                    <label for="LoginName">用户名：</label>
+                    <div class="inputBox">
+                        <input name="head$UserName1" type="text" id="head_UserName1" class="name">
+                    </div>
+                </div>
+                <div class="loginForm-field">
+                    <label for="LoginPassword">密码：</label>
+                    <div class="inputBox">
+                        <input name="head$UserPassword1" type="password" id="head_UserPassword1" class="pwd">
+                    </div>
+                </div>
+                <div class="loginForm-field">
+                    <button class="btn" type="submit" onclick="login()">登录</button>
+                    <a href="http://www.co-library.com/front/View/Regist.aspx">注册</a>
+                    <a href="http://www.co-library.com/front/View/ForgetPwd.aspx">忘记密码？</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog dialog-alert">
+        <div class="dialog-box">
+            <h2 class="dialog-title"><span></span><a class="dialog-close seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1#">关闭</a></h2>
+            <p class="dialog-content"></p>
+        </div>
+    </div>
+
+    <div class="dialog dialog-confirm">
+        <div class="dialog-box">
+            <h2 class="dialog-title"><span></span><a class="dialog-close seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1#">关闭</a></h2>
+            <p class="dialog-content"></p>
+            <div class="button">
+                
+                <a class="btn btn-confirm dialog-close" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1#">确定</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- InstanceBeginEditable name="dialog" -->
+    <div class="dialog dialog-paragraph">
+        <div class="dialog-box">
+            <h2 class="dialog-title"><span>如果您在本网站注册，表示您同意以下条款：</span><a class="dialog-close seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1#">关闭</a></h2>
+            <div class="dialog-text">
+                <h3>第1条 关于用户注册</h3>
+                <p>
+                    1）根据本网站所刊载的会员资料表格的要求，真实、准确、完整和反映当前情况的资料。<br>
+                    2）关于帐号的安全性：在登记过程中，您将选择会员注册名和密码。您须对您的会员注册名和密码保密，且须对您在会员注册名和密码下发生的所有活动承担责任。<br>
+                    3）用户的个人信息受到保护，不接受任何个人或单位的查询。司法、检察机关因法律需要除外，用户的个人设置公开除外，您的资料包括您在注册、使用本站服务过程中、在任何公开信息场合或通过任何电子邮件形式，向本站或其他用户提供的任何资料。您应对您的资料负全部责任，而本站仅作为您在网上发布和刊登您的资料的被动渠道。
+                </p>
+                <h3>第2条</h3>
+                <p>用户享有言论自由的权利，用户在网站上所发布、转载的文章所引起的版权问题以及因文章内包含毁谤、诋毁、攻击他人的信息等一切纠纷或后果由用户自行承担，本网概不负责。本网站尊重他人的任何权利，同时也要求我们的使用者也尊重他人之权利。本网站在适当情况下，有权自行决定删除侵犯他人权利的文章终止侵害或违反他人权利之使用者的帐号。</p>
+                <h3>第3条</h3>
+                <p>
+                    用户遵守《计算机信息网络国际联网安全保护管理办法》、《互联网信息服务管理办法》、《互联网电子公告服务管理规定》、《维护互联网安全的决定》、《互联网新闻信息服务管理规定》等相关法律法规。不得在本网站发布、传播或以其他方式传送含有下列内容之一的信息：<br>
+                    1）反对宪法所确定的基本原则的；<br>
+                    2）危害国家安全，泄露国家秘密，颠覆国家政权，破坏国家统一的；<br>
+                    3）损害国家荣誉和利益的；<br>
+                    4）煽动民族仇恨、民族歧视、破坏民族团结的；<br>
+                    5）破坏国家宗教政策，宣扬邪教和封建迷信的；<br>
+                    6）散布谣言，扰乱社会秩序，破坏社会稳定的；<br>
+                    7）散布淫秽、色情、赌博、暴力、凶杀、恐怖或者教唆犯罪的；<br>
+                    8）侮辱或者诽谤他人，侵害他人合法权利的；<br>
+                    9）煽动非法集会、结社、游行、示威、聚众扰乱社会秩序的；<br>
+                    10）其他违反国家法律、法规、规章、条例以及任何具有法律效力之规范所限制或禁止的其它内容的。
+                </p>
+                <h3>第4条</h3>
+                <p>用户在网站发表主题时，除遵守本条例外，还需遵守网站的相关规定；遵守本网站协议的用户在本网站中拥有言论自由的权利。</p>
+                <h3>第5条</h3>
+                <p>不允许在本网站内发布任何形式的广告。</p>
+                <h3>第6条</h3>
+                <p>用户应承担一切因其个人的行为而直接或间接导致的民事或刑事法律责任，因用户行为给公司造成损失的，用户应负责赔偿。</p>
+                <h3>第7条</h3>
+                <p>本网站拥有对违反本规则的用户进行处理的权力，直至禁止其在本网站内发布信息。</p>
+                <h3>第8条</h3>
+                <p>禁止任何使用发贴机等非法软件进行违规发贴的一切行为。</p>
+                <p>
+                    <br>
+                    <br>
+                </p>
+                <p style="text-align: right;">中小学图书馆与阅读网欢迎您</p>
+            </div>
+            <div class="dialog-button"><a class="btn btn-close ib dialog-close" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1#">关闭</a></div>
+        </div>
+    </div>
+    <!-- InstanceEndEditable -->
+</div>
+
+
+            <div class="trunck">
+                <!-- InstanceBeginEditable name="content" -->
+                <div class="type">
+                    <ul class="typeList">
+                        <li><a class="type-1 seo-text active" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=1" title="" onclick="return typeChange(1);" id="type1">主题活动</a></li>
+                        <li><a class="type-2 seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=2" title="" onclick="return typeChange(2);" id="type2">文学创作</a></li>
+                        <li><a class="type-4 seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=4" title="" onclick="return typeChange(4);" id="type4">艺术创作</a></li>
+                        
+                        <li><a class="type-6 seo-text" href="http://www.co-library.com/front/View/EssaySubmit.aspx?type=6" title="" onclick="return typeChange(6);" id="type6">读书荐书</a></li>
+                    </ul>
+                </div>
+                <div class="section section-type">
+                    <div class="section-top"></div>
+                    <div class="section-body clearfix">
+                        <h2 class="seo-text uploadType1-student" id="typeImg">
+                            <label id="lblTypeName">主题活动</label>
+                        </h2>
+
+                        <div class="main main-type">
+                            <div class="main-breadcrumb">
+                                <i class="addressbook ib"></i>
+                                <label id="lblTypeName1">主题活动</label>
+                            </div>
+
+                            <div class="form form-full">
+                                <div class="form-section">
+                                    <div class="form-row-link" id="cnki" style="display: none">
+                                        <a class="logo" href="http://epub.cnki.net/kns/loginid.aspx?username=cnkish2016&amp;password=cnkish2016&amp;p=brief/result.aspx?dbprefix=scdb&amp;action=scdbsearch&amp;db_opt=SCDB" target="_blank">
+                                            <img src="./中小学（幼儿园）图书馆与阅读网_files/www.cnki.net.png" width="250" alt="中国知网"></a>
+                                        <div class="articles">
+                                            <ul>
+                                                <li><a href="http://www.co-library.com/front/doc/%E9%99%84%E4%BB%B61%EF%BC%9A%E9%AB%98%E4%B8%AD%E7%94%9F%E7%A7%91%E6%8A%80%E6%96%87%E7%8C%AE%E7%BB%BC%E8%BF%B0%E8%AF%84%E9%80%89%E6%B4%BB%E5%8A%A8%E8%AF%B4%E6%98%8E.docx">附件1：高中生科技文献综述评选活动说明</a></li>
+                                                <li><a href="http://www.co-library.com/front/doc/%E9%99%84%E4%BB%B62%EF%BC%9A%E4%B8%AD%E5%9B%BD%E7%9F%A5%E7%BD%91-%E7%AE%80%E6%98%8E%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C.docx">附件2：中国知网-简明使用手册</a></li>
+                                                <li><a href="http://www.co-library.com/front/doc/%E9%99%84%E4%BB%B63%EF%BC%9A%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%E7%9A%84%E8%91%97%E5%BD%95%E6%A0%BC%E5%BC%8F.docx">附件3：参考文献的著录格式</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="clear"></div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div id="role" style="display:none;">
+                                        <div class="form-row">
+                                            <div class="field">
+                                                <label></label>
+                                                <span style="color: red">*代学生上传作品
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="field">
+                                                <label for="HomeAddress">学生所在年级：</label>
+                                                <span class="inputBox">
+                                                    <select name="ddlNianji" id="ddlNianji" onchange="njChange()">
+	<option value="5">一年级</option>
+	<option value="6">二年级</option>
+	<option value="7">三年级</option>
+	<option value="8">四年级</option>
+	<option value="9">五年级</option>
+	<option value="10">六年级</option>
+	<option value="11">七年级</option>
+	<option value="12">八年级</option>
+	<option value="13">九年级</option>
+	<option value="14">高中一年级</option>
+	<option value="15">高中二年级</option>
+	<option value="16">高中三年级</option>
+	<option value="17">其他</option>
+</select>
+                                                </span>
+                                                <span class="inputBox">
+                                                    <input name="txtNjOther" type="text" id="txtNjOther" style="display: none;">
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="field">
+                                                <label for="SchoolClass">学生所在班级：</label>
+                                                <span class="inputBox">
+                                                    <select name="ddlBanji" id="ddlBanji" onchange="bjChange()">
+	<option value="1">1班</option>
+	<option value="2">2班</option>
+	<option value="3">3班</option>
+	<option value="4">4班</option>
+	<option value="5">5班</option>
+	<option value="6">6班</option>
+	<option value="7">7班</option>
+	<option value="8">8班</option>
+	<option value="9">9班</option>
+	<option value="10">10班</option>
+	<option value="11">11班</option>
+	<option value="12">12班</option>
+	<option value="13">13班</option>
+	<option value="14">14班</option>
+	<option value="15">15班</option>
+	<option value="16">其他</option>
+</select>
+                                                </span>
+                                                <span class="inputBox">
+                                                    <input name="txtBjOther" type="text" id="txtBjOther" style="display: none;">
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="field">
+                                                <label for="Author">学生姓名：</label>
+                                                <span class="inputBox">
+                                                    <input name="txtAuthor" type="text" id="txtAuthor" maxlength="30" class="char"></span>
+                                                <span class="alert alert-lblTitle" id="sAuthor" style="display: none;"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="WorkTitle">
+                                            <label class="lblTitle">作品标题：</label>
+                                        </label>
+                                        <span class="inputBox">
+                                            <input name="txtTitle" type="text" maxlength="180" id="txtTitle" class="char char-long" onblur="checkTitle()">
+                                        </span>
+                                        <span class="alert alert-lblTitle" id="sTitle" style="display: none;"></span>
+                                    </div>
+                                    <div class="form-row" id="remark" style="display: none">
+                                        <label for="WorkRemark">
+                                            <label class="lblRemark">摘要(300字以内)：</label></label>
+                                        <span class="inputBox">
+                                            <textarea name="txtRemark" id="txtRemark"></textarea>
+                                        </span>
+
+                                        <span class="alert alert-lblRemark" id="sRemark" style="display: none;"></span>
+                                    </div>
+                                    <div class="form-row" id="keywords" style="display: none">
+                                        <label for="WorkKeywords">
+                                            <label class="lblRemark">作品关键词：</label></label>
+                                        <span class="inputBox">
+                                            <input name="txtKeywords" type="text" maxlength="500" id="txtKeywords" class="char char-long">
+                                        </span>
+                                        <span class="alert alert-lblTitle" id="sKeywords" style="display: none;"></span>
+                                    </div>
+
+                                    <div class="form-row" id="content">
+                                        <label for="WorkContent">
+                                            <label class="lblRemark">作品内容(说明)：</label></label>
+                                        <span class="inputBox">
+                                            <textarea name="txtContent" id="txtContent"></textarea>
+                                        </span>
+                                        <span class="alert alert-lblTitle" id="sContent" style="display: none;"></span>
+                                    </div>
+
+                                    <div class="form-row" id="reference" style="display: none">
+                                        <label for="WorkContent">
+                                            <label class="lblRemark">参考文献：</label></label>
+                                        <span class="inputBox">
+                                            <textarea name="txtReference" id="txtReference"></textarea>
+                                        </span>
+                                        <span class="alert alert-lblTitle" id="sReference" style="display: none;"></span>
+                                    </div>
+
+                                    <div class="form-row" style="display: none;" id="literature">
+                                        <label for="GroupName">出版社：</label>
+                                        <span class="inputBox">
+                                            <input name="txtLiterature" type="text" id="txtLiterature" class="char char-long">
+                                        </span>
+                                        <span class="alert alert-lblTitle" id="sLiterature" style="display: none;"></span>
+                                    </div>
+                                    <div class="form-row" id="upLable" style="display: block;">
+                                        <label></label>
+                                        最多可上传<span class="fileCount">4</span>个文件
+                                        <span id="dnzp" style="display: none;">多文件作品请打包成rar/zip后上传</span>
+                                        <label id="showScgs" style="display: none;"></label>
+                                        <span id="scgs">,允许上传格式：jpg,gif,png,jpeg,pdf,cdr,flv,swf</span>
+
+                                    </div>
+                                    <div class="form-row" id="uploadImg" style="display: none;">
+                                        <label>附件上传：</label>
+                                        <span class="fl"><a class="btn-upload seo-text" style="cursor: pointer;" onclick="uploadClick()">点击这里，进行图片上传</a></span>
+                                    </div>
+                                    <div class="form-row" style="display: block;" id="upload">
+                                        <div class="field">
+                                            <label for="Attachment">附件上传：</label>
+                                            <span class="inputBox">
+                                                <div id="uploader" style="width: 600px; position: relative;"><div class="plupload_wrapper"><div class="ui-widget-content plupload_container" id="uploader_container" title="使用运行时: html5"><div class="plupload"><div class="ui-state-default ui-widget-header plupload_header"><div class="plupload_header_content"><div class="plupload_header_title">选择文件</div><div class="plupload_header_text">将文件添加到上传队列，然后点击”开始上传“按钮。</div><div class="plupload_message ui-state-error"><span class="plupload_message_close ui-icon ui-icon-circle-close" title="关闭"></span><p><span class="ui-icon ui-icon-alert"></span><strong>文件扩展名错误</strong> <br><i>文件: 读《我是猫》.docx</i></p></div></div></div><div class="plupload_content"><table class="plupload_filelist"><tbody><tr class="ui-widget-header plupload_filelist_header"><td class="plupload_cell plupload_file_name">文件名</td><td class="plupload_cell plupload_file_status">状态</td><td class="plupload_cell plupload_file_size">大小</td><td class="plupload_cell plupload_file_action">&nbsp;</td></tr></tbody></table><div class="plupload_scroll" id="uploader_dropbox"><table class="plupload_filelist_content" id="uploader_filelist" unselectable="on"><tbody><tr class="plupload_done ui-state-default plupload_file" id="p1efc5ui761em31cnf1d191keg7om5"><td class="plupload_cell plupload_file_name"><span>读《我是猫》.pdf</span></td><td class="plupload_cell plupload_file_status">100%</td><td class="plupload_cell plupload_file_size">99 KB</td><td class="plupload_cell plupload_file_action"><div class="ui-icon ui-icon-circle-check"></div><input type="hidden" name="uploader_0_tmpname" value="p1efc5ui761em31cnf1d191keg7om5.pdf"><input type="hidden" name="uploader_0_name" value="读《我是猫》.pdf"><input type="hidden" name="uploader_0_status" value="done"></td></tr></tbody></table></div><table class="plupload_filelist"><tbody><tr class="ui-widget-header ui-widget-content plupload_filelist_footer"><td class="plupload_cell plupload_file_name"><div class="plupload_buttons"><!-- Visible --><a class="plupload_button plupload_add ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary" id="uploader_browse" role="button" aria-disabled="false" style="z-index: 0;"><span class="ui-button-icon-primary ui-icon ui-icon-circle-plus"></span><span class="ui-button-text">添加文件</span></a>&nbsp;<a class="plupload_button plupload_start ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary ui-button-disabled ui-state-disabled" id="uploader_start" role="button" aria-disabled="true"><span class="ui-button-icon-primary ui-icon ui-icon-circle-arrow-e"></span><span class="ui-button-text">开始上传</span></a>&nbsp;<a class="plupload_button plupload_stop ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary plupload_hidden" id="uploader_stop" role="button" aria-disabled="false"><span class="ui-button-icon-primary ui-icon ui-icon-circle-close"></span><span class="ui-button-text">停止上传</span></a>&nbsp;</div><div class="plupload_started plupload_hidden"><!-- Hidden --><div class="plupload_progress plupload_right"><div class="plupload_progress_container ui-progressbar ui-widget ui-widget-content ui-corner-all" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div class="ui-progressbar-value ui-widget-header ui-corner-left ui-corner-right" style="display: block; width: 100%;"></div></div></div><div class="plupload_cell plupload_upload_status">开始上传第 1/1 个文件</div><div class="plupload_clearer">&nbsp;</div></div></td><td class="plupload_file_status"><span class="plupload_total_status">100%</span></td><td class="plupload_file_size"><span class="plupload_total_file_size">99 KB</span></td><td class="plupload_file_action"></td></tr></tbody></table></div></div></div><input class="plupload_count" value="1" type="hidden" id="uploader_count" name="uploader_count"></div><div id="p1efc5p6r4pfp1n0v1a4ntefdb0_html5_container" class="plupload html5" style="position: absolute; background: transparent; width: 111px; height: 28px; overflow: hidden; z-index: -1; opacity: 0; top: 265px; left: 11px;"><input id="p1efc5p6r4pfp1n0v1a4ntefdb0_html5" style="font-size: 999px; position: absolute; width: 100%; height: 100%;" type="file" accept="" multiple="multiple"></div></div>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="form-row" id="zdls">
+                                        <div class="field">
+                                            <label for="Author">指导老师：</label>
+                                            <span class="inputBox">
+                                                <input name="txtZhidao" type="text" id="txtZhidao" maxlength="30" class="char"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row" id="isBtn" style="display: block;">
+                                    <div class="form-field form-field-line">
+                                        <label></label>
+                                        <input type="submit" name="btnOK" value="提　交" onclick="return checkSub();" id="btnOK" class="btn btn-submit">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-bottom"></div>
+                </div>
+                <!-- InstanceEndEditable -->
+            </div>
+            
+
+<div class="footer">
+    <ul class="footer-linkShare">
+        
+        <li>上海市中小学生读书活动促进会</li>
+        
+    </ul>
+        <p class="footer-copyright"><a href="http://www.beian.miit.gov.cn/"> 沪ICP备16002209号</a></p>
+</div>
+
+
+        </div>
+    </form>
+
+
+</body></html>
